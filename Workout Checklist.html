@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workout Checklist (Offline)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --card:#121a23; --muted:#8aa0b6; --text:#e8f0fa;
+      --accent:#ff8a00; --accent2:#2dd4bf; --border:#223142;
+      --ok:#22c55e;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 30% -10%, #1a2533 0, var(--bg) 60%);
+      color:var(--text);
+      padding:16px;
+    }
+    .wrap{max-width:860px;margin:0 auto}
+    header{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .title{display:flex;flex-direction:column;gap:4px}
+    h1{margin:0;font-size:20px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px}
+    .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+    button{
+      appearance:none;
+      border:1px solid var(--border);
+      background:transparent;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:600;
+      font-size:13px;
+      cursor:pointer;
+    }
+    button.primary{
+      background:linear-gradient(135deg,var(--accent),#ffb800);
+      border:none;
+      color:#111;
+    }
+    button.ghost{background:rgba(255,255,255,.04)}
+    button:active{transform:translateY(1px)}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:12px;
+      margin:10px 0;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    details{border-radius:14px; overflow:hidden}
+    summary{
+      cursor:pointer;
+      list-style:none;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:12px 12px;
+      border-radius:14px;
+      background:rgba(0,0,0,.18);
+    }
+    summary::-webkit-details-marker{display:none}
+    .secTitle{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:800;
+      letter-spacing:.3px;
+    }
+    .tag{
+      font-size:11px;
+      color:#111;
+      background:var(--accent2);
+      padding:3px 8px;
+      border-radius:999px;
+      font-weight:800;
+    }
+    .count{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .mini{
+      padding:2px 8px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+    }
+    .items{padding:10px 12px 12px}
+    .item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 8px;
+      border-radius:12px;
+    }
+    .item:not(:last-child){border-bottom:1px dashed rgba(255,255,255,.08)}
+    input[type="checkbox"]{
+      width:20px;
+      height:20px;
+      accent-color: var(--ok);
+    }
+    .name{flex:1;font-weight:650}
+    .hint{color:var(--muted);font-size:12px}
+    .footer{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .progress{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:10px 0 0;
+    }
+    .meter{
+      flex:1;
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      overflow:hidden;
+      border:1px solid var(--border);
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,var(--ok),#84cc16);
+      transition: width .2s ease;
+    }
+    .pct{font-weight:800}
+    textarea{
+      width:100%;
+      min-height:90px;
+      resize:vertical;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px;
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1>Workout Checklist (Offline)</h1>
+      <div class="sub">Checks save on this device (no internet needed). Use it daily.</div>
+    </div>
+    <div class="bar">
+      <button class="ghost" id="expandAll">Expand all</button>
+      <button class="ghost" id="collapseAll">Collapse all</button>
+      <button class="ghost" id="export">Export text</button>
+      <button class="primary" id="reset">Reset today</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="progress">
+      <div class="meter"><div class="fill" id="fill"></div></div>
+      <div class="pct"><span id="done">0</span>/<span id="total">0</span> (<span id="percent">0</span>%)</div>
+    </div>
+  </div>
+
+  <!-- SECTIONS -->
+  <div class="card">
+    <details open data-section="lower">
+      <summary>
+        <div class="secTitle">🦵 LOWER BODY <span class="tag">Strength</span></div>
+        <div class="count"><span class="mini" id="lowerCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="lower"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details data-section="upper">
+      <summary>
+        <div class="secTitle">💪 UPPER BODY <span class="tag">Lean & Strong</span></div>
+        <div class="count"><span class="mini" id="upperCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="upper"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details data-section="core">
+      <summary>
+        <div class="secTitle">🧠 CORE <span class="tag">Stability</span></div>
+        <div class="count"><span class="mini" id="coreCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="core"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details data-section="speed">
+      <summary>
+        <div class="secTitle">⚡ SPEED & CONDITIONING <span class="tag">Athletic</span></div>
+        <div class="count"><span class="mini" id="speedCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="speed"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details data-section="mobility">
+      <summary>
+        <div class="secTitle">🧘 MOBILITY <span class="tag">Recovery</span></div>
+        <div class="count"><span class="mini" id="mobilityCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="mobility"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <label class="sub" style="display:block;margin-bottom:8px;">Notes</label>
+    <textarea id="notes" placeholder="What felt good? What to improve?"></textarea>
+  </div>
+
+  <div class="footer">
+    <div>Tip: You don’t need to check everything daily—pick a focus, stay consistent.</div>
+    <div>Data stays on your device only (localStorage).</div>
+  </div>
+</div>
+
+<script>
+  // ---------- DATA ----------
+  const EXERCISES = {
+    lower: [
+      { name: "Squats", hint: "Deep, controlled" },
+      { name: "Jump Squats", hint: "" },
+      { name: "Walking Lunges", hint: "" },
+      { name: "Bulgarian Split Squats", hint: "" },
+      { name: "Glute Bridges", hint: "" },
+      { name: "Wall Sit", hint: "" },
+      { name: "Single-Leg Squats", hint: "Pistol progression" },
+    ],
+    upper: [
+      { name: "Push-Ups", hint: "Basic → Diamond → Wide → Decline" },
+      { name: "Pike Push-Ups", hint: "" },
+      { name: "Explosive Push-Ups", hint: "Clap if possible" },
+      { name: "Dips", hint: "Chair/bed" },
+      { name: "Handstand Hold", hint: "Against wall" },
+    ],
+    core: [
+      { name: "Plank", hint: "" },
+      { name: "Side Plank", hint: "" },
+      { name: "Mountain Climbers", hint: "" },
+      { name: "Lying Leg Raises", hint: "Hanging alternative" },
+      { name: "Russian Twists", hint: "" },
+      { name: "Hollow Body Hold", hint: "" },
+      { name: "V-Ups", hint: "" },
+      { name: "Dead Bug", hint: "" },
+    ],
+    speed: [
+      { name: "Sprinting", hint: "10–30 sec bursts" },
+      { name: "High Knees", hint: "" },
+      { name: "Burpees", hint: "" },
+      { name: "Jump Lunges", hint: "" },
+      { name: "Skater Jumps", hint: "" },
+      { name: "Broad Jumps", hint: "" },
+      { name: "Shadow Boxing", hint: "" },
+    ],
+    mobility: [
+      { name: "Deep Squat Hold", hint: "" },
+      { name: "Hip Openers", hint: "" },
+      { name: "Hamstring Stretch", hint: "" },
+      { name: "Shoulder Circles", hint: "" },
+      { name: "Dynamic Leg Swings", hint: "" },
+      { name: "World’s Greatest Stretch", hint: "" },
+    ],
+  };
+
+  // ---------- HELPERS ----------
+  const $ = (id) => document.getElementById(id);
+
+  function todayISO(){
+    const d = new Date();
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d - tzOffset).toISOString().slice(0,10);
+  }
+
+  // We removed the date box, so we still need a date key for saving/loading.
+  function getActiveDate(){
+    return todayISO(); // silent "today" key
+  }
+
+  function keyFor(dateStr){ return `workoutChecklist:${dateStr}`; }
+
+  function loadState(dateStr){
+    const raw = localStorage.getItem(keyFor(dateStr));
+    if (!raw) return { checks:{}, notes:"" };
+    try { return JSON.parse(raw); }
+    catch { return { checks:{}, notes:"" }; }
+  }
+
+  function saveState(dateStr, state){
+    localStorage.setItem(keyFor(dateStr), JSON.stringify(state));
+  }
+
+  // ---------- RENDER ----------
+  function renderSection(sectionId, items, state, dateStr){
+    const container = $(sectionId);
+    container.innerHTML = "";
+
+    items.forEach((it, idx) => {
+      const id = `${sectionId}_${idx}`;
+      const checked = !!state.checks[id];
+
+      const row = document.createElement("div");
+      row.className = "item";
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = id;
+      cb.checked = checked;
+
+      cb.addEventListener("change", () => {
+        state.checks[id] = cb.checked;
+        saveState(dateStr, state);
+        updateProgress(state);
+      });
+
+      const label = document.createElement("label");
+      label.htmlFor = id;
+      label.className = "name";
+      label.textContent = it.name;
+
+      const hint = document.createElement("div");
+      hint.className = "hint";
+      hint.textContent = it.hint;
+
+      const right = document.createElement("div");
+      right.style.display = "flex";
+      right.style.flexDirection = "column";
+      right.style.alignItems = "flex-end";
+      right.style.gap = "2px";
+      if (it.hint) right.appendChild(hint);
+
+      row.appendChild(cb);
+      row.appendChild(label);
+      row.appendChild(right);
+      container.appendChild(row);
+    });
+  }
+
+  function updateProgress(state){
+    const allIds = [];
+    Object.keys(EXERCISES).forEach(sec=>{
+      EXERCISES[sec].forEach((_, idx)=> allIds.push(`${sec}_${idx}`));
+    });
+
+    const total = allIds.length;
+    const done = allIds.filter(id => state.checks[id]).length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+
+    $("total").textContent = total;
+    $("done").textContent = done;
+    $("percent").textContent = pct;
+    $("fill").style.width = `${pct}%`;
+
+    for (const sec of Object.keys(EXERCISES)){
+      const ids = EXERCISES[sec].map((_, idx)=> `${sec}_${idx}`);
+      const d = ids.filter(id => state.checks[id]).length;
+      const t = ids.length;
+      const el = $(`${sec}Count`);
+      if (el) el.textContent = `${d}/${t}`;
+    }
+  }
+
+  function renderAll(){
+    const dateStr = getActiveDate();
+    const state = loadState(dateStr);
+
+    $("notes").value = state.notes ?? "";
+
+    renderSection("lower", EXERCISES.lower, state, dateStr);
+    renderSection("upper", EXERCISES.upper, state, dateStr);
+    renderSection("core", EXERCISES.core, state, dateStr);
+    renderSection("speed", EXERCISES.speed, state, dateStr);
+    renderSection("mobility", EXERCISES.mobility, state, dateStr);
+
+    updateProgress(state);
+
+    $("notes").oninput = () => {
+      state.notes = $("notes").value;
+      saveState(dateStr, state);
+    };
+  }
+
+  // ---------- ACTIONS ----------
+  function resetToday(){
+    const dateStr = getActiveDate();
+    const state = loadState(dateStr);
+    state.checks = {};
+    state.notes = "";
+    saveState(dateStr, state);
+    renderAll();
+  }
+
+  function expandCollapse(allOpen){
+    document.querySelectorAll("details").forEach(d => d.open = allOpen);
+  }
+
+  function exportText(){
+    const dateStr = getActiveDate();
+    const state = loadState(dateStr);
+
+    const lines = [];
+    lines.push(`Workout Checklist — ${dateStr}`);
+    lines.push("");
+
+    for (const sec of Object.keys(EXERCISES)){
+      lines.push(sec.toUpperCase());
+      EXERCISES[sec].forEach((it, idx)=>{
+        const id = `${sec}_${idx}`;
+        const mark = state.checks[id] ? "✅" : "⬜";
+        const hint = it.hint ? ` (${it.hint})` : "";
+        lines.push(`${mark} ${it.name}${hint}`);
+      });
+      lines.push("");
+    }
+
+    if (state.notes?.trim()){
+      lines.push("NOTES");
+      lines.push(state.notes.trim());
+      lines.push("");
+    }
+
+    const text = lines.join("\n");
+
+    navigator.clipboard?.writeText(text).then(()=>{
+      alert("Export copied to clipboard ✅");
+    }).catch(()=>{
+      window.prompt("Copy your export:", text);
+    });
+  }
+
+  // ---------- INIT ----------
+  (function init(){
+    renderAll();
+    $("reset").addEventListener("click", resetToday);
+    $("expandAll").addEventListener("click", ()=>expandCollapse(true));
+    $("collapseAll").addEventListener("click", ()=>expandCollapse(false));
+    $("export").addEventListener("click", exportText);
+  })();
+</script>
+</body>
+</html>
