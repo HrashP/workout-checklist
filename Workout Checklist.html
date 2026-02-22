@@ -158,8 +158,158 @@
       color:var(--text);
       outline:none;
     }
+
+    /* ---------- Calendar row ---------- */
+    .calRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .calLeft{display:flex;flex-direction:column;gap:4px}
+    .calLabel{font-weight:800}
+    .calSub{color:var(--muted);font-size:12px}
+    .calRight{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    #openCalendar{min-width:140px}
+
+    /* ---------- Calendar Popup Modal ---------- */
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      z-index:9999;
+    }
+    .modal.open{display:block;}
+    .modalBackdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,.60);
+    }
+
+    /* 50% transparent glass background */
+    .modalBox{
+      position:relative;
+      width:min(360px, calc(100vw - 24px));
+      margin:80px auto 0;
+
+      background: rgba(18,26,35,0.50);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:18px;
+      padding:12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.55);
+    }
+
+    .calHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:6px 4px 10px;
+    }
+    .calMonth{font-weight:900; letter-spacing:.2px;}
+    .calHeaderRight{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+
+    .calDow{
+      display:grid;
+      grid-template-columns:repeat(7, 1fr);
+      gap:6px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      padding:4px;
+    }
+    .calDow > div{ text-align:center; padding:6px 0; }
+
+    .calGrid{
+      display:grid;
+      grid-template-columns:repeat(7, 1fr);
+      gap:8px;
+      padding:4px;
+    }
+
+    .calDay{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:14px;
+      padding:12px 0;
+      font-weight:800;
+      cursor:pointer;
+      text-align:center;
+      user-select:none;
+      transition: background .15s ease, transform .05s ease, border-color .15s ease;
+    }
+    .calDay:hover{
+      background:rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.14);
+    }
+    .calDay:active{transform:translateY(1px)}
+    .calDay.muted{opacity:.30;}
+    .calDay.today{
+      outline:2px solid rgba(45,212,191,.65);
+      outline-offset:0;
+    }
+    .calDay.selected{
+      background:linear-gradient(135deg,var(--accent),#ffb800);
+      border:none;
+      color:#111;
+    }
+
+    /* ---------- Summary UI ---------- */
+    .sumHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+    .sumTitle{
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .sumMeta{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+    }
+    .sumGrid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:10px;
+      margin-top:8px;
+    }
+    @media (max-width:560px){
+      .sumGrid{grid-template-columns:1fr}
+    }
+    .sumBox{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px;
+      background:rgba(0,0,0,.18);
+    }
+    .sumBox .k{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+    .sumBox .v{
+      font-weight:900;
+      font-size:14px;
+    }
+    .sumEmpty{
+      color:var(--muted);
+      font-size:13px;
+      padding-top:6px;
+    }
   </style>
 </head>
+
 <body>
 <div class="wrap">
   <header>
@@ -171,15 +321,73 @@
       <button class="ghost" id="expandAll">Expand all</button>
       <button class="ghost" id="collapseAll">Collapse all</button>
       <button class="ghost" id="export">Export text</button>
-      <button class="primary" id="reset">Reset today</button>
+      <button class="ghost" id="saveSummary">Save daily summary</button>
+      <button class="primary" id="reset">Reset this day</button>
     </div>
   </header>
 
+  <!-- Calendar / Date Picker (Popup style) -->
+  <div class="card" id="calendarCard">
+    <div class="calRow">
+      <div class="calLeft">
+        <div class="calLabel">📅 Select date</div>
+        <div class="calSub">Switch day to view/save a different checklist.</div>
+      </div>
+
+      <div class="calRight">
+        <button class="ghost" id="prevDay">◀</button>
+
+        <button class="ghost" id="openCalendar">
+          <span id="dateText">YYYY-MM-DD</span>
+        </button>
+
+        <button class="ghost" id="nextDay">▶</button>
+        <button class="ghost" id="todayBtn">Today</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Popup (Modal) -->
+  <div class="modal" id="calModal" aria-hidden="true">
+    <div class="modalBackdrop" id="calClose"></div>
+
+    <div class="modalBox" role="dialog" aria-modal="true" aria-label="Calendar">
+      <div class="calHeader">
+        <div class="calMonth" id="calMonthLabel">Feb 2026</div>
+        <div class="calHeaderRight">
+          <button class="ghost" id="calToday">Today</button>
+          <button class="ghost" id="calPrev">◀</button>
+          <button class="ghost" id="calNext">▶</button>
+        </div>
+      </div>
+
+      <div class="calDow">
+        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+      </div>
+
+      <div class="calGrid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <!-- Progress -->
   <div class="card">
     <div class="progress">
       <div class="meter"><div class="fill" id="fill"></div></div>
       <div class="pct"><span id="done">0</span>/<span id="total">0</span> (<span id="percent">0</span>%)</div>
     </div>
+  </div>
+
+  <!-- NEW: Saved Daily Summary -->
+  <div class="card" id="summaryCard">
+    <div class="sumHeader">
+      <div>
+        <div class="sumTitle">📝 Daily Summary (Saved)</div>
+        <div class="sumMeta" id="summaryMeta">No summary saved for this date.</div>
+      </div>
+      <div class="sumMeta" id="summaryStatus"></div>
+    </div>
+
+    <div id="summaryBody" class="sumEmpty">Press <b>Save daily summary</b> to store today’s snapshot.</div>
   </div>
 
   <!-- SECTIONS -->
@@ -253,7 +461,6 @@
       { name: "Walking Lunges", hint: "" },
       { name: "Bulgarian Split Squats", hint: "" },
       { name: "Glute Bridges", hint: "" },
-      { name: "Wall Sit", hint: "" },
       { name: "Single-Leg Squats", hint: "Pistol progression" },
     ],
     upper: [
@@ -262,13 +469,12 @@
       { name: "Explosive Push-Ups", hint: "Clap if possible" },
       { name: "Dips", hint: "Chair/bed" },
       { name: "Handstand Hold", hint: "Against wall" },
+      { name: "Plank to Push-Up (Up-Down Planks)", hint: "30–45 sec • alternate lead arm" },
     ],
     core: [
       { name: "Plank", hint: "" },
       { name: "Side Plank", hint: "" },
       { name: "Mountain Climbers", hint: "" },
-      { name: "Lying Leg Raises", hint: "Hanging alternative" },
-      { name: "Russian Twists", hint: "" },
       { name: "Hollow Body Hold", hint: "" },
       { name: "V-Ups", hint: "" },
       { name: "Dead Bug", hint: "" },
@@ -279,7 +485,6 @@
       { name: "Burpees", hint: "" },
       { name: "Jump Lunges", hint: "" },
       { name: "Skater Jumps", hint: "" },
-      { name: "Broad Jumps", hint: "" },
       { name: "Shadow Boxing", hint: "" },
     ],
     mobility: [
@@ -301,9 +506,15 @@
     return new Date(d - tzOffset).toISOString().slice(0,10);
   }
 
-  // We removed the date box, so we still need a date key for saving/loading.
+  const ACTIVE_DATE_KEY = "workoutChecklist:activeDate";
+  function getStoredActiveDate(){
+    return localStorage.getItem(ACTIVE_DATE_KEY) || todayISO();
+  }
+  function setStoredActiveDate(dateStr){
+    localStorage.setItem(ACTIVE_DATE_KEY, dateStr);
+  }
   function getActiveDate(){
-    return todayISO(); // silent "today" key
+    return getStoredActiveDate() || todayISO();
   }
 
   function keyFor(dateStr){ return `workoutChecklist:${dateStr}`; }
@@ -317,6 +528,97 @@
 
   function saveState(dateStr, state){
     localStorage.setItem(keyFor(dateStr), JSON.stringify(state));
+  }
+
+  // ---------- DAILY SUMMARY (manual save) ----------
+  function summaryKey(dateStr){ return `workoutSummary:${dateStr}`; }
+
+  function saveSummary(dateStr, summaryObj){
+    localStorage.setItem(summaryKey(dateStr), JSON.stringify(summaryObj));
+  }
+
+  function loadSummary(dateStr){
+    const raw = localStorage.getItem(summaryKey(dateStr));
+    if (!raw) return null;
+    try { return JSON.parse(raw); }
+    catch { return null; }
+  }
+
+  function deleteSummary(dateStr){
+    localStorage.removeItem(summaryKey(dateStr));
+  }
+
+  function computeStats(state){
+    const sections = {};
+    const allIds = [];
+
+    for (const sec of Object.keys(EXERCISES)){
+      const ids = EXERCISES[sec].map((_, idx)=> `${sec}_${idx}`);
+      allIds.push(...ids);
+      const done = ids.filter(id => state.checks[id]).length;
+      sections[sec] = { done, total: ids.length };
+    }
+
+    const total = allIds.length;
+    const done = allIds.filter(id => state.checks[id]).length;
+    const percent = total ? Math.round((done/total) * 100) : 0;
+
+    return { done, total, percent, sections };
+  }
+
+  function formatSavedAt(iso){
+    // Small readable format without relying on locale options too much
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleString();
+  }
+
+  function renderSummaryCard(){
+    const dateStr = getActiveDate();
+    const saved = loadSummary(dateStr);
+
+    const meta = $("summaryMeta");
+    const body = $("summaryBody");
+
+    $("summaryStatus").textContent = "";
+
+    if (!saved){
+      meta.textContent = "No summary saved for this date.";
+      body.className = "sumEmpty";
+      body.innerHTML = `Press <b>Save daily summary</b> to store today’s snapshot.`;
+      return;
+    }
+
+    meta.textContent = `Saved on: ${formatSavedAt(saved.savedAt)}`;
+
+    const s = saved.sections || {};
+    const secLine = (secName, label) => {
+      const obj = s[secName] || {done:0,total:0};
+      return `${label}: <b>${obj.done}/${obj.total}</b>`;
+    };
+
+    body.className = "";
+    body.innerHTML = `
+      <div class="sumGrid">
+        <div class="sumBox">
+          <div class="k">Overall</div>
+          <div class="v">${saved.done}/${saved.total} (${saved.percent}%)</div>
+        </div>
+        <div class="sumBox">
+          <div class="k">Sections</div>
+          <div class="v" style="font-weight:750; font-size:13px; line-height:1.45;">
+            ${secLine("lower","Lower")}<br/>
+            ${secLine("upper","Upper")}<br/>
+            ${secLine("core","Core")}<br/>
+            ${secLine("speed","Speed")}<br/>
+            ${secLine("mobility","Mobility")}
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px; color:var(--muted); font-size:12px;">
+        Notes snapshot: ${saved.notes && saved.notes.trim() ? `"${saved.notes.trim().replace(/</g,"&lt;").replace(/>/g,"&gt;")}"` : "<i>none</i>"}
+      </div>
+    `;
   }
 
   // ---------- RENDER ----------
@@ -407,15 +709,21 @@
       state.notes = $("notes").value;
       saveState(dateStr, state);
     };
+
+    renderSummaryCard();
   }
 
   // ---------- ACTIONS ----------
-  function resetToday(){
+  function resetThisDay(){
     const dateStr = getActiveDate();
     const state = loadState(dateStr);
     state.checks = {};
     state.notes = "";
     saveState(dateStr, state);
+
+    // Also clear saved summary for this date (so it's not wrong)
+    deleteSummary(dateStr);
+
     renderAll();
   }
 
@@ -457,13 +765,261 @@
     });
   }
 
+  function onSaveDailySummary(){
+    const dateStr = getActiveDate();
+    const state = loadState(dateStr);
+    const stats = computeStats(state);
+
+    // Require at least 1 workout checked to save
+    if (stats.done === 0){
+      $("summaryStatus").textContent = "⚠️ Select at least 1 workout before saving.";
+      setTimeout(()=>{ $("summaryStatus").textContent = ""; }, 2500);
+      return;
+    }
+
+    const summaryObj = {
+      date: dateStr,
+      savedAt: new Date().toISOString(),
+      done: stats.done,
+      total: stats.total,
+      percent: stats.percent,
+      sections: stats.sections,
+      notes: (state.notes || "")
+    };
+
+    saveSummary(dateStr, summaryObj);
+
+    $("summaryStatus").textContent = "✅ Saved!";
+    setTimeout(()=>{ $("summaryStatus").textContent = ""; }, 2000);
+
+    renderSummaryCard();
+  }
+
+  // ---------- POPUP CALENDAR ----------
+  function setupCalendar(){
+    const openBtn = $("openCalendar");
+    const modal = $("calModal");
+    const closeBackdrop = $("calClose");
+    const dateText = $("dateText");
+
+    const calGrid = $("calGrid");
+    const monthLabel = $("calMonthLabel");
+
+    const btnPrev = $("calPrev");
+    const btnNext = $("calNext");
+    const btnToday = $("calToday");
+
+    function setDateText(dateStr){
+      dateText.textContent = dateStr;
+    }
+
+    function openModal(){
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden","false");
+      renderMonth();
+    }
+
+    function closeModal(){
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden","true");
+    }
+
+    let viewYear, viewMonth; // month: 0-11
+
+    function initViewFromActive(){
+      const active = getStoredActiveDate();
+      const d = new Date(active + "T00:00:00");
+      viewYear = d.getFullYear();
+      viewMonth = d.getMonth();
+      setDateText(active);
+    }
+
+    function daysInMonth(y, m){
+      return new Date(y, m+1, 0).getDate();
+    }
+
+    function toISO(y, m, day){
+      const mm = String(m+1).padStart(2,"0");
+      const dd = String(day).padStart(2,"0");
+      return `${y}-${mm}-${dd}`;
+    }
+
+    function renderMonth(){
+      const active = getStoredActiveDate();
+      const activeD = new Date(active + "T00:00:00");
+      const activeY = activeD.getFullYear();
+      const activeM = activeD.getMonth();
+      const activeDay = activeD.getDate();
+
+      const today = todayISO();
+      const todayD = new Date(today + "T00:00:00");
+      const todayY = todayD.getFullYear();
+      const todayM = todayD.getMonth();
+      const todayDay = todayD.getDate();
+
+      const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      monthLabel.textContent = `${monthNames[viewMonth]} ${viewYear}`;
+
+      calGrid.innerHTML = "";
+
+      const firstDow = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+      const dim = daysInMonth(viewYear, viewMonth);
+
+      // Previous month filler
+      const prevY = viewMonth === 0 ? viewYear - 1 : viewYear;
+      const prevM = viewMonth === 0 ? 11 : viewMonth - 1;
+      const prevDim = daysInMonth(prevY, prevM);
+
+      for (let i = 0; i < firstDow; i++){
+        const day = prevDim - (firstDow - 1 - i);
+        const btn = document.createElement("div");
+        btn.className = "calDay muted";
+        btn.textContent = day;
+        btn.addEventListener("click", ()=>{
+          const iso = toISO(prevY, prevM, day);
+          setStoredActiveDate(iso);
+          setDateText(iso);
+          const d = new Date(iso + "T00:00:00");
+          viewYear = d.getFullYear();
+          viewMonth = d.getMonth();
+          renderAll();
+          closeModal();
+        });
+        calGrid.appendChild(btn);
+      }
+
+      // Current month days
+      for (let day = 1; day <= dim; day++){
+        const btn = document.createElement("div");
+        btn.className = "calDay";
+        btn.textContent = day;
+
+        if (viewYear === todayY && viewMonth === todayM && day === todayDay){
+          btn.classList.add("today");
+        }
+        if (viewYear === activeY && viewMonth === activeM && day === activeDay){
+          btn.classList.add("selected");
+        }
+
+        btn.addEventListener("click", ()=>{
+          const iso = toISO(viewYear, viewMonth, day);
+          setStoredActiveDate(iso);
+          setDateText(iso);
+          renderAll();
+          closeModal();
+        });
+
+        calGrid.appendChild(btn);
+      }
+
+      // Next month filler
+      const totalCells = calGrid.children.length;
+      const filler = (totalCells <= 35) ? (42 - totalCells) : (49 - totalCells); // 6 or 7 rows
+      const nextY = viewMonth === 11 ? viewYear + 1 : viewYear;
+      const nextM = viewMonth === 11 ? 0 : viewMonth + 1;
+
+      for (let day = 1; day <= filler; day++){
+        const btn = document.createElement("div");
+        btn.className = "calDay muted";
+        btn.textContent = day;
+        btn.addEventListener("click", ()=>{
+          const iso = toISO(nextY, nextM, day);
+          setStoredActiveDate(iso);
+          setDateText(iso);
+          const d = new Date(iso + "T00:00:00");
+          viewYear = d.getFullYear();
+          viewMonth = d.getMonth();
+          renderAll();
+          closeModal();
+        });
+        calGrid.appendChild(btn);
+      }
+    }
+
+    // Day-by-day quick buttons
+    $("todayBtn").addEventListener("click", () => {
+      const iso = todayISO();
+      setStoredActiveDate(iso);
+      setDateText(iso);
+      const d = new Date(iso + "T00:00:00");
+      viewYear = d.getFullYear();
+      viewMonth = d.getMonth();
+      renderAll();
+    });
+
+    $("prevDay").addEventListener("click", () => {
+      const cur = new Date(getStoredActiveDate() + "T00:00:00");
+      cur.setDate(cur.getDate() - 1);
+      const iso = new Date(cur.getTime() - cur.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+      setStoredActiveDate(iso);
+      setDateText(iso);
+      const d = new Date(iso + "T00:00:00");
+      viewYear = d.getFullYear();
+      viewMonth = d.getMonth();
+      renderAll();
+    });
+
+    $("nextDay").addEventListener("click", () => {
+      const cur = new Date(getStoredActiveDate() + "T00:00:00");
+      cur.setDate(cur.getDate() + 1);
+      const iso = new Date(cur.getTime() - cur.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+      setStoredActiveDate(iso);
+      setDateText(iso);
+      const d = new Date(iso + "T00:00:00");
+      viewYear = d.getFullYear();
+      viewMonth = d.getMonth();
+      renderAll();
+    });
+
+    // Popup open/close
+    openBtn.addEventListener("click", openModal);
+    closeBackdrop.addEventListener("click", closeModal);
+
+    // Month navigation
+    btnPrev.addEventListener("click", ()=>{
+      viewMonth -= 1;
+      if (viewMonth < 0){ viewMonth = 11; viewYear -= 1; }
+      renderMonth();
+    });
+
+    btnNext.addEventListener("click", ()=>{
+      viewMonth += 1;
+      if (viewMonth > 11){ viewMonth = 0; viewYear += 1; }
+      renderMonth();
+    });
+
+    btnToday.addEventListener("click", ()=>{
+      const iso = todayISO();
+      const d = new Date(iso + "T00:00:00");
+      viewYear = d.getFullYear();
+      viewMonth = d.getMonth();
+      setStoredActiveDate(iso);
+      setDateText(iso);
+      renderAll();
+      closeModal();
+    });
+
+    // ESC close
+    document.addEventListener("keydown", (e)=>{
+      if (e.key === "Escape" && modal.classList.contains("open")){
+        closeModal();
+      }
+    });
+
+    // init
+    initViewFromActive();
+  }
+
   // ---------- INIT ----------
   (function init(){
+    setupCalendar();
     renderAll();
-    $("reset").addEventListener("click", resetToday);
+
+    $("reset").addEventListener("click", resetThisDay);
     $("expandAll").addEventListener("click", ()=>expandCollapse(true));
     $("collapseAll").addEventListener("click", ()=>expandCollapse(false));
     $("export").addEventListener("click", exportText);
+    $("saveSummary").addEventListener("click", onSaveDailySummary);
   })();
 </script>
 </body>
