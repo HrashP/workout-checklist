@@ -1,0 +1,42 @@
+{
+  "lower": [
+    { "name": "Squats", "hint": "Deep, controlled" },
+    { "name": "Jump Squats", "hint": "" },
+    { "name": "Walking Lunges", "hint": "" },
+    { "name": "Bulgarian Split Squats", "hint": "" },
+    { "name": "Glute Bridges", "hint": "" },
+    { "name": "Single-Leg Squats", "hint": "Pistol progression" }
+  ],
+  "upper": [
+    { "name": "Push-Ups", "hint": "Basic → Diamond → Wide → Decline" },
+    { "name": "Pike Push-Ups", "hint": "" },
+    { "name": "Explosive Push-Ups", "hint": "Clap if possible" },
+    { "name": "Dips", "hint": "Chair/bed" },
+    { "name": "Handstand Hold", "hint": "Against wall" },
+    { "name": "Plank to Push-Up (Up-Down Planks)", "hint": "30–45 sec • alternate lead arm" }
+  ],
+  "core": [
+    { "name": "Plank", "hint": "" },
+    { "name": "Side Plank", "hint": "" },
+    { "name": "Mountain Climbers", "hint": "" },
+    { "name": "Hollow Body Hold", "hint": "" },
+    { "name": "V-Ups", "hint": "" },
+    { "name": "Dead Bug", "hint": "" }
+  ],
+  "speed": [
+    { "name": "Sprinting", "hint": "10–30 sec bursts" },
+    { "name": "High Knees", "hint": "" },
+    { "name": "Burpees", "hint": "" },
+    { "name": "Jump Lunges", "hint": "" },
+    { "name": "Skater Jumps", "hint": "" },
+    { "name": "Shadow Boxing", "hint": "" }
+  ],
+  "mobility": [
+    { "name": "Deep Squat Hold", "hint": "" },
+    { "name": "Hip Openers", "hint": "" },
+    { "name": "Hamstring Stretch", "hint": "" },
+    { "name": "Shoulder Circles", "hint": "" },
+    { "name": "Dynamic Leg Swings", "hint": "" },
+    { "name": "World's Greatest Stretch", "hint": "" }
+  ]
+}

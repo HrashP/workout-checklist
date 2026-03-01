@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Offline workout checklist app. Track daily exercises, view analytics, and stay consistent — no internet needed." />
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <title>Workout Checklist</title>
+</head>
+
+<body>
+<main class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="title">
+      <h1>💪 Workout Checklist</h1>
+      <div class="sub">Track daily. Stay consistent. All data stays on your device.</div>
+    </div>
+    <nav class="bar" aria-label="Actions">
+      <button class="ghost" id="expandAll">Expand all</button>
+      <button class="ghost" id="collapseAll">Collapse all</button>
+      <button class="ghost" id="export">📥 Export</button>
+      <button class="ghost" id="saveSummary">💾 Save summary</button>
+      <button class="primary" id="reset">Reset day</button>
+    </nav>
+  </header>
+
+  <!-- Calendar / Date Picker -->
+  <div class="card" id="calendarCard">
+    <div class="calRow">
+      <div class="calLeft">
+        <div class="calLabel">📅 Select date</div>
+        <div class="calSub">Switch day to view/save a different checklist.</div>
+      </div>
+      <div class="calRight">
+        <button class="ghost" id="prevDay" aria-label="Previous day">◀</button>
+        <button class="ghost" id="openCalendar">
+          <span id="dateText">YYYY-MM-DD</span>
+        </button>
+        <button class="ghost" id="nextDay" aria-label="Next day">▶</button>
+        <button class="ghost" id="todayBtn">Today</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Popup Modal -->
+  <div class="modal" id="calModal" aria-hidden="true">
+    <div class="modalBackdrop" id="calClose"></div>
+    <div class="modalBox" role="dialog" aria-modal="true" aria-label="Calendar">
+      <div class="calHeader">
+        <div class="calMonth" id="calMonthLabel">Feb 2026</div>
+        <div class="calHeaderRight">
+          <button class="ghost" id="calToday">Today</button>
+          <button class="ghost" id="calPrev" aria-label="Previous month">◀</button>
+          <button class="ghost" id="calNext" aria-label="Next month">▶</button>
+        </div>
+      </div>
+      <div class="calDow">
+        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+      </div>
+      <div class="calGrid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card">
+    <div class="progress">
+      <div class="meter"><div class="fill" id="fill"></div></div>
+      <div class="pct"><span id="done">0</span>/<span id="total">0</span> (<span id="percent">0</span>%)</div>
+    </div>
+  </div>
+
+  <!-- Tabs: Summary / Analytics -->
+  <div class="card">
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="summary">📝 Summary</button>
+      <button class="tab-btn" data-tab="analytics">📊 Analytics</button>
+      <button class="tab-btn" data-tab="timer">⏱ Timer</button>
+    </div>
+
+    <!-- Tab: Summary -->
+    <div class="tab-panel active" id="tab-summary">
+      <div class="sumHeader">
+        <div>
+          <div class="sumTitle">Daily Summary (Saved)</div>
+          <div class="sumMeta" id="summaryMeta">No summary saved for this date.</div>
+        </div>
+        <div class="sumMeta" id="summaryStatus"></div>
+      </div>
+      <div id="summaryBody" class="sumEmpty">Press <b>Save summary</b> to store today's snapshot.</div>
+    </div>
+
+    <!-- Tab: Analytics -->
+    <div class="tab-panel" id="tab-analytics">
+      <div class="analytics-grid">
+        <div class="stat-box">
+          <div class="stat-value" id="streakValue">0</div>
+          <div class="stat-label">🔥 Day Streak</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="weekAvgValue">0%</div>
+          <div class="stat-label">📈 7-Day Avg</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="activeDaysValue">0</div>
+          <div class="stat-label">🗓 Active (30d)</div>
+        </div>
+      </div>
+      <div class="heatmap-wrap">
+        <div class="heatmap-label">Last 30 Days</div>
+        <div class="heatmap" id="heatmap"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Timer -->
+    <div class="tab-panel" id="tab-timer">
+      <div class="timer-wrap">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <button class="ghost timer-btn" id="timerStart">▶ Start</button>
+        <button class="ghost timer-btn" id="timerReset">↺ Reset</button>
+        <div class="timer-presets">
+          <button class="ghost active" data-secs="0">Free</button>
+          <button class="ghost" data-secs="30">30s</button>
+          <button class="ghost" data-secs="45">45s</button>
+          <button class="ghost" data-secs="60">60s</button>
+          <button class="ghost" data-secs="90">90s</button>
+          <button class="ghost" data-secs="120">2m</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise Sections -->
+  <section class="card" aria-labelledby="lower-heading">
+    <details open data-section="lower">
+      <summary>
+        <div class="secTitle" id="lower-heading">🦵 LOWER BODY <span class="tag">Strength</span></div>
+        <div class="count"><span class="mini" id="lowerCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="lower"></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="upper-heading">
+    <details data-section="upper">
+      <summary>
+        <div class="secTitle" id="upper-heading">💪 UPPER BODY <span class="tag">Lean & Strong</span></div>
+        <div class="count"><span class="mini" id="upperCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="upper"></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="core-heading">
+    <details data-section="core">
+      <summary>
+        <div class="secTitle" id="core-heading">🧠 CORE <span class="tag">Stability</span></div>
+        <div class="count"><span class="mini" id="coreCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="core"></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="speed-heading">
+    <details data-section="speed">
+      <summary>
+        <div class="secTitle" id="speed-heading">⚡ SPEED & CONDITIONING <span class="tag">Athletic</span></div>
+        <div class="count"><span class="mini" id="speedCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="speed"></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="mobility-heading">
+    <details data-section="mobility">
+      <summary>
+        <div class="secTitle" id="mobility-heading">🧘 MOBILITY <span class="tag">Recovery</span></div>
+        <div class="count"><span class="mini" id="mobilityCount">0/0</span> Tap to open</div>
+      </summary>
+      <div class="items" id="mobility"></div>
+    </details>
+  </section>
+
+  <!-- Notes -->
+  <section class="card">
+    <label class="sub" for="notes" style="display:block;margin-bottom:8px;">Notes</label>
+    <textarea id="notes" placeholder="What felt good? What to improve?"></textarea>
+  </section>
+
+  <!-- Storage Management -->
+  <div class="card">
+    <div class="storage-info">
+      <div class="storage-stats" id="storageStats">Loading...</div>
+      <button class="ghost danger" id="cleanStorage">🗑 Clean old data (90d+)</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>Tip: You don't need to check everything daily — pick a focus, stay consistent.</div>
+    <div>Data stays on your device only (localStorage).</div>
+  </footer>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
